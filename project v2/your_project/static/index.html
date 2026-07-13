@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Live IoT Sensor Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: #0f1117;
+    color: #e6e6e6;
+    margin: 0;
+    padding: 24px;
+  }
+  h1 {
+    font-weight: 600;
+    margin-bottom: 4px;
+  }
+  #status {
+    font-size: 14px;
+    margin-bottom: 24px;
+  }
+  #status.connected { color: #4ade80; }
+  #status.disconnected { color: #f87171; }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+    gap: 20px;
+  }
+  .card {
+    background: #171a23;
+    border-radius: 12px;
+    padding: 16px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  }
+  .card h2 {
+    font-size: 15px;
+    font-weight: 500;
+    margin: 0 0 12px 0;
+    color: #a1a1aa;
+  }
+  canvas {
+    max-height: 240px;
+  }
+</style>
+</head>
+<body>
+
+<h1>IoT Sensor Dashboard</h1>
+<div id="status" class="disconnected">Connecting…</div>
+
+<div class="grid">
+  <div class="card">
+    <h2>Temperature (°C)</h2>
+    <canvas id="tempChart"></canvas>
+  </div>
+  <div class="card">
+    <h2>Humidity (%)</h2>
+    <canvas id="humidityChart"></canvas>
+  </div>
+  <div class="card">
+    <h2>Light (lux)</h2>
+    <canvas id="lightChart"></canvas>
+  </div>
+</div>
+
+<script>
+// ---- CONFIG: adjust field names here if your SQLite columns differ ----
+const FIELDS = {
+  temperature: { label: "Temperature", color: "#f87171" },
+  humidity:    { label: "Humidity",    color: "#60a5fa" },
+  light:       { label: "Light",       color: "#fbbf24" },
+};
+const MAX_POINTS = 50; // how many points to keep on screen per chart
+// -------------------------------------------------------------------------
+
+function makeChart(canvasId, label, color) {
+  const ctx = document.getElementById(canvasId).getContext("2d");
+  return new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: [],
+      datasets: [{
+        label: label,
+        data: [],
+        borderColor: color,
+        backgroundColor: color + "33",
+        tension: 0.3,
+        pointRadius: 0,
+        fill: true,
+      }],
+    },
+    options: {
+      responsive: true,
+      animation: false,
+      scales: {
+        x: { ticks: { color: "#71717a", maxTicksLimit: 6 }, grid: { color: "#27272a" } },
+        y: { ticks: { color: "#71717a" }, grid: { color: "#27272a" } },
+      },
+      plugins: { legend: { display: false } },
+    },
+  });
+}
+
+const charts = {
+  temperature: makeChart("tempChart", FIELDS.temperature.label, FIELDS.temperature.color),
+  humidity: makeChart("humidityChart", FIELDS.humidity.label, FIELDS.humidity.color),
+  light: makeChart("lightChart", FIELDS.light.label, FIELDS.light.color),
+};
+
+function formatTime(ts) {
+  const d = new Date(ts);
+  return isNaN(d) ? ts : d.toLocaleTimeString();
+}
+
+function pushPoint(row) {
+  const label = formatTime(row.timestamp);
+  for (const key of Object.keys(FIELDS)) {
+    if (!(key in row)) continue;
+    const chart = charts[key];
+    chart.data.labels.push(label);
+    chart.data.datasets[0].data.push(row[key]);
+    if (chart.data.labels.length > MAX_POINTS) {
+      chart.data.labels.shift();
+      chart.data.datasets[0].data.shift();
+    }
+    chart.update("none");
+  }
+}
+
+// 1. Load recent history so the chart isn't empty on page load
+fetch("/api/history?limit=" + MAX_POINTS)
+  .then(res => res.json())
+  .then(rows => rows.forEach(pushPoint))
+  .catch(err => console.error("Failed to load history:", err));
+
+// 2. Open WebSocket for live updates
+const statusEl = document.getElementById("status");
+const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+const ws = new WebSocket(protocol + window.location.host + "/ws");
+
+ws.onopen = () => {
+  statusEl.textContent = "Connected — live";
+  statusEl.className = "connected";
+};
+
+ws.onclose = () => {
+  statusEl.textContent = "Disconnected — check server";
+  statusEl.className = "disconnected";
+};
+
+ws.onmessage = (event) => {
+  const newRows = JSON.parse(event.data);
+  newRows.forEach(pushPoint);
+};
+</script>
+
+</body>
+</html>
