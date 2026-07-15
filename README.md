@@ -3,6 +3,9 @@
 Real-time IoT monitoring pipeline: an ESP32-C6 publishes sensor readings over MQTT, a Python subscriber logs them to SQLite, and a FastAPI server streams live updates to a browser dashboard via WebSocket + Chart.js.
 
 ## Architecture
+## Hardware
+
+![ESP32-C6 sensor wiring](images/hardware-setup.jpg)
 ## Sensors
 
 - Temperature & Humidity (DHT11)
