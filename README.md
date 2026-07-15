@@ -58,7 +58,11 @@ temperature REAL,
 light REAL,
 humidity REAL
 ```
+## Earlier visualization (Grafana)
 
+![Grafana gauge panel](images/grafana-panel.png)
+
+Before switching to the FastAPI + Chart.js dashboard, sensor data was visualized in Grafana (reading from the same SQLite database via the `frser-sqlite-datasource` plugin). Kept here for reference.
 ## Dashboard
 
 `GET /` — serves the live dashboard
