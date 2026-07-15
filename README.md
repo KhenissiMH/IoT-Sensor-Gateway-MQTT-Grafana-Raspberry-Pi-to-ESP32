@@ -11,7 +11,10 @@ Real-time IoT monitoring pipeline: an ESP32-C6 publishes sensor readings over MQ
 - Temperature & Humidity (DHT11)
 - Light (BH1750)
 - Flame (HW-072A)
-- PIR motion
+- PIR motion PIR HC-SR501
+- Gas‎ ‎MQ-2
+
+
 
 ## Repo structure
 
