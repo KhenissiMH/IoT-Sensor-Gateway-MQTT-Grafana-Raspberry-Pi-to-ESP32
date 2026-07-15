@@ -68,9 +68,3 @@ Before switching to the FastAPI + Chart.js dashboard, sensor data was visualized
 `GET /` — serves the live dashboard
 `GET /api/history?limit=100` — recent readings, oldest first (used to pre-populate charts)
 `WS /ws` — pushes new rows to connected browsers as they're inserted
-
-## TODO / known limitations
-
-- Hardcoded Windows file paths (`DB_PATH`) in `main.py` and `mqtt_data.py` — need to be made configurable (env var or relative path).
-- No `.gitignore` — `Data.db` and vendored `site-packages/` are currently committed and should be excluded.
-- Grafana was explored earlier but the project has since moved to the FastAPI/Chart.js dashboard above.
