@@ -68,3 +68,4 @@ Before switching to the FastAPI + Chart.js dashboard, sensor data was visualized
 `GET /` — serves the live dashboard
 `GET /api/history?limit=100` — recent readings, oldest first (used to pre-populate charts)
 `WS /ws` — pushes new rows to connected browsers as they're inserted
+
